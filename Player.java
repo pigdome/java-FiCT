@@ -3,29 +3,32 @@ import java.util.*;
 public class Player {
 
 	public enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
-	
+	private enum PlayerStatus {Sleeping, Taunting, Cursed};
+
+	private PlayerStatus status;//Status of this player. Can be one of either Sleeping, Taunting, Cursed or NULL ( for normal case )
 	private PlayerType type; 	//Type of this player. Can be one of either Healer, Tank, Samurai, BlackMage, or Phoenix
 	private double maxHP;		//Max HP of this player
 	private double currentHP;	//Current HP of this player 
 	private double atk;			//Attack power of this player
 	private int numSpecialTurns;//Num of Special Turns
 	private int position;       //Position in team
+	private int counter;        //Counter for useSpecialAbility
 
 	/**
 	 * Constructor of class Player, which initializes this player's type, maxHP, atk, numSpecialTurns, 
 	 * as specified in the given table. It also reset the internal turn count of this player. 
 	 * @param _type
+	 * @param _maxHP
+	 * @param _atk
+	 * @param _numSpecialTurns
 	 */
-	public Player(PlayerType _type)
-	{	
-		this(_type, 0, 0, 0, 0);
-	}
-	public Player(PlayerType type, double maxHP, double atk, int numSpecialTurns, int position)
+	public Player(PlayerType _type, double _maxHP, double _atk, int _numSpecialTurns)
 	{
-		this.type = type;
-		this.maxHP = maxHP;
-		this.atk = atk;
-		this.numSpecialTurns = numSpecialTurns;
+		this.type = _type;
+		this.maxHP = _maxHP;
+		this.atk = _atk;
+		this.numSpecialTurns = _numSpecialTurns;
+		ResetCounter();
 	}
 	
 	/**
@@ -101,6 +104,42 @@ public class Player {
 		//INSERT YOUR CODE HERE
 		return false;
 	}
+
+	// set currentHp of this Player
+	public void setCurrentHP(double currentHP)
+	{
+		this.currentHP = currentHP;
+	}
+
+	// increase counter by one
+	public void increaseCounter()
+	{
+		this.counter++;
+	}
+
+	// reset counter to zero
+	public void resetCounter()
+	{
+		this.counter = 0;
+	}
+
+	// get counter of this Player
+	public int getCounter()
+	{
+		return this.counter;
+	}
+
+	// set position of this player
+	public void setPosition(int position)
+	{
+		this.position = position;
+	}
+
+	// get postion of this player
+	public int getPostion()
+	{
+		return this.position;
+	}
 	
 	
 	public void attack(Player target)
@@ -148,10 +187,10 @@ public class SortByHpAndIndex implements Comparator<Player>
 	public int compare(Player a, Player b)
 	{
 		int result;
-		result = a.currentHP - b.currentHP;
+		result = a.getCurrentHP() - b.getCurrentHP();
 		if( result == 0 )
 		{
-			result = a.index - b.index;
+			result = a.getPostion() - b.getPostion();
 		}
 		return result;
 	}
@@ -161,10 +200,7 @@ public class Healer extends Player
 {
 	public Healer()
 	{
-		this.maxHP = 4790;
-		this.attack = 238;
-		this.numSpecialTurns = 4;
-		super(Player.PlayerType.Healer);
+		super(Player.PlayerType.Healer, 4790, 238, 4);
 	}
 	public void useSpecialAbility(Player[][] myTeam, Player[][] theirTeam)
 	{
@@ -182,10 +218,10 @@ public class Healer extends Player
 		Player min = plist.get(0);
 
 		// heal lowest player
-		min.currentHP = min.currentHP + ( this.maxHP * 0.25 );
-		if( min.currentHP > this.maxHP )
+		min.setCurrentHP( min.getCurrentHP() + ( this.getMaxHP() * 0.25 ) );
+		if( min.getCurrentHP() > this.getMaxHP() )
 		{
-			min.currentHP = this.maxHP;
+			min.getCurrentHP( this.getMaxHP() );
 		}
 	}
 }
