@@ -187,4 +187,19 @@ public class Arena {
 		
 	}
 	
+	public Player[][] getTeam(Team team)
+	{
+		if( team == Team.A )
+		{
+			return this.teamA;
+		}
+		else if( team == Team.B )
+		{
+			return this.teamB;
+		}
+		else
+		{
+			System.out.println("team can be 'A' or 'B'");
+		}
+	}
 }

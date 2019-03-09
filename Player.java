@@ -37,8 +37,7 @@ public class Player {
 	 */
 	public double getCurrentHP()
 	{
-		//INSERT YOUR CODE HERE
-		return 0;
+		return this.currentHP;
 	}
 	
 	/**
@@ -47,8 +46,7 @@ public class Player {
 	 */
 	public Player.PlayerType getType()
 	{
-		//INSERT YOUR CODE HERE
-		return null;
+		return this.type;
 	}
 	
 	/**
@@ -57,9 +55,7 @@ public class Player {
 	 */
 	public double getMaxHP()
 	{
-		//INSERT YOUR CODE HERE
-		
-		return 0;
+		this.maxHP;
 	}
 	
 	/**
@@ -68,9 +64,7 @@ public class Player {
 	 */
 	public boolean isSleeping()
 	{
-		//INSERT YOUR CODE HERE
-		
-		return false;
+		return this.status == PlayerStatus.Sleeping;
 	}
 	
 	/**
@@ -79,9 +73,7 @@ public class Player {
 	 */
 	public boolean isCursed()
 	{
-		//INSERT YOUR CODE HERE
-		
-		return false;
+		return this.status == PlayerStatus.Cursed;
 	}
 	
 	/**
@@ -90,9 +82,7 @@ public class Player {
 	 */
 	public boolean isAlive()
 	{
-		//INSERT YOUR CODE HERE
-		
-		return true;
+		return this.currentHP > 0 ? true : false;
 	}
 	
 	/**
@@ -101,8 +91,7 @@ public class Player {
 	 */
 	public boolean isTaunting()
 	{
-		//INSERT YOUR CODE HERE
-		return false;
+		return this.status == PlayerStatus.Taunting;
 	}
 
 	// set currentHp of this Player
@@ -141,15 +130,23 @@ public class Player {
 		return this.position;
 	}
 	
-	
+	/*
+		deduce target hp with attack of player
+		if target hp less than 0 set it to 0
+		hp should not be negative
+	*/
 	public void attack(Player target)
 	{	
-		//INSERT YOUR CODE HERE
+		double targetHP = target.getCurrentHP();
+		targetHP = targetHP - this.atk;
+		targetHP = targetHP < 0 ? 0 : targetHP;
+		target.setCurrentHP(targetHP);
 	}
 	
 	public void useSpecialAbility(Player[][] myTeam, Player[][] theirTeam)
 	{	
 		//INSERT YOUR CODE HERE
+		// do nothing let sub class handle it
 	}
 	
 	
@@ -162,7 +159,40 @@ public class Player {
 	 */
 	public void takeAction(Arena arena)
 	{	
-		//INSERT YOUR CODE HERE
+		if( this.getCounter() == this.numSpecialTurns )
+		{
+			Team myTeam;
+			Team theirTeam;
+			if( isMemberOf(this,Team.A) )
+			{
+				myTeam = Team.A;
+				theirTeam = Team.B;
+			}
+			else
+			{
+				myTeam = Team.B;
+				theirTeam = Team.A;
+			}
+			// call special ability of sub class
+			useSpecialAbility(arena.getTeam(myTeam), arena.getTeam(theirTeam));
+		}
+	}
+
+	// return lowest current hp in this team
+	public Player getLowestHP(Player[][] team)
+	{
+		// pull all player to arraylist
+		// and sort by hp and index
+		ArrayList<Player> plist = new ArrayList<Player>();
+		for(Player[] players : myTeam)
+		{
+			for( Player player : players )
+			{
+				plist.add(player);
+			}
+		}
+		Collections.sort(plist, new SortByHpAndIndex());
+		return plist.get(0);
 	}
 	
 	/**
@@ -204,20 +234,7 @@ public class Healer extends Player
 	}
 	public void useSpecialAbility(Player[][] myTeam, Player[][] theirTeam)
 	{
-		// pull all player to arraylist
-		// and sort by hp and index
-		ArrayList<Player> plist = new ArrayList<Player>();
-		for(Player[] players : myTeam)
-		{
-			for( Player player : players )
-			{
-				plist.add(player);
-			}
-		}
-		Collections.sort(plist, new SortByHpAndIndex());
-		Player min = plist.get(0);
-
-		// heal lowest player
+		Player min = getLowestHP(myTeam);
 		min.setCurrentHP( min.getCurrentHP() + ( this.getMaxHP() * 0.25 ) );
 		if( min.getCurrentHP() > this.getMaxHP() )
 		{
