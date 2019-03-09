@@ -1,3 +1,4 @@
+import java.util.*;
 
 public class Player {
 
@@ -7,8 +8,9 @@ public class Player {
 	private double maxHP;		//Max HP of this player
 	private double currentHP;	//Current HP of this player 
 	private double atk;			//Attack power of this player
-	
-	
+	private int numSpecialTurns;//Num of Special Turns
+	private int position;       //Position in team
+
 	/**
 	 * Constructor of class Player, which initializes this player's type, maxHP, atk, numSpecialTurns, 
 	 * as specified in the given table. It also reset the internal turn count of this player. 
@@ -16,7 +18,14 @@ public class Player {
 	 */
 	public Player(PlayerType _type)
 	{	
-		//INSERT YOUR CODE HERE
+		this(_type, 0, 0, 0, 0);
+	}
+	public Player(PlayerType type, double maxHP, double atk, int numSpecialTurns, int position)
+	{
+		this.type = type;
+		this.maxHP = maxHP;
+		this.atk = atk;
+		this.numSpecialTurns = numSpecialTurns;
 	}
 	
 	/**
@@ -131,4 +140,52 @@ public class Player {
 	}
 	
 	
+}
+
+public class SortByHpAndIndex implements Comparator<Player>
+{
+	@override
+	public int compare(Player a, Player b)
+	{
+		int result;
+		result = a.currentHP - b.currentHP;
+		if( result == 0 )
+		{
+			result = a.index - b.index;
+		}
+		return result;
+	}
+}
+
+public class Healer extends Player
+{
+	public Healer()
+	{
+		this.maxHP = 4790;
+		this.attack = 238;
+		this.numSpecialTurns = 4;
+		super(Player.PlayerType.Healer);
+	}
+	public void useSpecialAbility(Player[][] myTeam, Player[][] theirTeam)
+	{
+		// pull all player to arraylist
+		// and sort by hp and index
+		ArrayList<Player> plist = new ArrayList<Player>();
+		for(Player[] players : myTeam)
+		{
+			for( Player player : players )
+			{
+				plist.add(player);
+			}
+		}
+		Collections.sort(plist, new SortByHpAndIndex());
+		Player min = plist.get(0);
+
+		// heal lowest player
+		min.currentHP = min.currentHP + ( this.maxHP * 0.25 );
+		if( min.currentHP > this.maxHP )
+		{
+			min.currentHP = this.maxHP;
+		}
+	}
 }
