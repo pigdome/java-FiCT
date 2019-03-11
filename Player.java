@@ -1,23 +1,47 @@
 import java.util.*;
 
-public class Player {
+public class Player{
 
-	public enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
+	private enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
 	private enum PlayerStatus {Sleeping, Taunting, Cursed};
+	private enum Team {A, B};   //enum for specifying team A or B
 
 	private PlayerStatus status;//Status of this player. Can be one of either Sleeping, Taunting, Cursed or NULL ( for normal case )
 	private PlayerType type; 	//Type of this player. Can be one of either Healer, Tank, Samurai, BlackMage, or Phoenix
+	private Team team;
 	private double maxHP;		//Max HP of this player
 	private double currentHP;	//Current HP of this player 
 	private double atk;			//Attack power of this player
 	private int numSpecialTurns;//Num of Special Turns
 	private int position;       //Position in team
 	private int counter;        //Counter for useSpecialAbility
+	private int id;             //Identifier of this play
+
+	private static int auto_increment = 0; // auto increment for id
 
 	/**
 	 * Constructor of class Player, which initializes this player's type, maxHP, atk, numSpecialTurns, 
 	 * as specified in the given table. It also reset the internal turn count of this player. 
 	 * @param _type
+	 */
+	public Player(PlayerType _type)
+	{
+		switch(_type)
+		{
+			case PlayerType.Healer: 	this(_type, 4790, 238, 4);
+			case PlayerType.Tank: 		this(_type, 5340, 255, 4);
+			case PlayerType.Samurai: 	this(_type, 4005, 368, 3);
+			case PlayerType.BlackMage: 	this(_type, 4175, 303, 4);
+			case PlayerType.Phoenix: 	this(_type, 4175, 209, 8);
+			case PlayerType.Cherry: 	this(_type, 3560, 198, 4);
+		}
+	}
+
+	/**
+	 * Constructor of class Player, which initializes this player's type, maxHP, atk, numSpecialTurns, 
+	 * as specified in the given table. It also reset the internal turn count of this player. 
+	 * @param _type
+	 * @param _team
 	 * @param _maxHP
 	 * @param _atk
 	 * @param _numSpecialTurns
@@ -28,6 +52,7 @@ public class Player {
 		this.maxHP = _maxHP;
 		this.atk = _atk;
 		this.numSpecialTurns = _numSpecialTurns;
+		this.id = ++auto_increment;
 		ResetCounter();
 	}
 	
@@ -55,7 +80,7 @@ public class Player {
 	 */
 	public double getMaxHP()
 	{
-		this.maxHP;
+		return this.maxHP;
 	}
 	
 	/**
@@ -129,6 +154,36 @@ public class Player {
 	{
 		return this.position;
 	}
+
+	// get identifier
+	public int getID()
+	{
+		return this.id;
+	}
+
+	// set team
+	public void setTeam(Team team)
+	{
+		this.team = team;
+	}
+
+	// get team
+	public Team getTeam()
+	{
+		return this.team;
+	}
+
+	// compare two player by hp if hp is the same compare by position
+	public int compareTo(Player a, Player b)
+	{
+		int result;
+		result = a.getCurrentHP() - b.getCurrentHP();
+		if( result == 0 )
+		{
+			result = a.getPostion() - b.getPostion();
+		}
+		return result;
+	}
 	
 	/*
 		deduce target hp with attack of player
@@ -145,10 +200,51 @@ public class Player {
 	
 	public void useSpecialAbility(Player[][] myTeam, Player[][] theirTeam)
 	{	
-		//INSERT YOUR CODE HERE
-		// do nothing let sub class handle it
+		switch(this.type)
+		{
+			case PlayerType.Healer: heal(myTeam);
+			case PlayerType.Tank: taunt(theirTeam);
+			case PlayerType.Samurai: doubleSlash(theirTeam);
+			case PlayerType.BlackMage: curse(theirTeam);
+			case PlayerType.Phoenix: revive(myTeam);
+			case PlayerType.Cherry: fortuneCookies(theirTeam);
+		}
 	}
 	
+	public void heal(Player[][] myTeam)
+	{
+		Player min = getLowestHP(myTeam);
+		min.setCurrentHP( min.getCurrentHP() + ( this.getMaxHP() * 0.25 ) );
+		if( min.getCurrentHP() > this.getMaxHP() )
+		{
+			min.getCurrentHP( this.getMaxHP() );
+		}
+	}
+
+	public void taunt(Player[][] theirTeam)
+	{
+
+	}
+
+	public void doubleSlash(Player[][] theirTeam)
+	{
+
+	}
+
+	public void curse(Player[][] theirTeam)
+	{
+
+	}
+
+	public void revive(Player[][] myTeam)
+	{
+
+	}
+
+	public void fortuneCookies(Player[][] theirTeam)
+	{
+
+	}
 	
 	/**
 	 * This method is called by Arena when it is this player's turn to take an action. 
@@ -163,7 +259,7 @@ public class Player {
 		{
 			Team myTeam;
 			Team theirTeam;
-			if( isMemberOf(this,Team.A) )
+			if( isMemberOf(this, Team.A) )
 			{
 				myTeam = Team.A;
 				theirTeam = Team.B;
@@ -182,7 +278,6 @@ public class Player {
 	public Player getLowestHP(Player[][] team)
 	{
 		// pull all player to arraylist
-		// and sort by hp and index
 		ArrayList<Player> plist = new ArrayList<Player>();
 		for(Player[] players : myTeam)
 		{
@@ -191,7 +286,23 @@ public class Player {
 				plist.add(player);
 			}
 		}
-		Collections.sort(plist, new SortByHpAndIndex());
+		
+		// and sort by hp and index
+		// buble sort
+		int n = plist.size();
+		for(int i=0; i < n; i++)
+		{  
+			for(int j=1; j < (n-i); j++)
+			{
+				if(arr[j-1] > arr[j]){  
+					//swap elements
+					Player temp = plist.get(j-1);
+					plist.set(j-1, plist.get(j));
+					plist.set(j, temp);
+				}	
+			}
+        }
+		
 		return plist.get(0);
 	}
 	
@@ -209,36 +320,4 @@ public class Player {
 	}
 	
 	
-}
-
-public class SortByHpAndIndex implements Comparator<Player>
-{
-	@override
-	public int compare(Player a, Player b)
-	{
-		int result;
-		result = a.getCurrentHP() - b.getCurrentHP();
-		if( result == 0 )
-		{
-			result = a.getPostion() - b.getPostion();
-		}
-		return result;
-	}
-}
-
-public class Healer extends Player
-{
-	public Healer()
-	{
-		super(Player.PlayerType.Healer, 4790, 238, 4);
-	}
-	public void useSpecialAbility(Player[][] myTeam, Player[][] theirTeam)
-	{
-		Player min = getLowestHP(myTeam);
-		min.setCurrentHP( min.getCurrentHP() + ( this.getMaxHP() * 0.25 ) );
-		if( min.getCurrentHP() > this.getMaxHP() )
-		{
-			min.getCurrentHP( this.getMaxHP() );
-		}
-	}
 }

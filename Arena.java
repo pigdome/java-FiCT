@@ -50,8 +50,33 @@ public class Arena {
 	 */
 	public boolean isMemberOf(Player player, Team team)
 	{
-		//INSERT YOUR CODE HERE
-		
+		Player[][] myTeam;
+
+		// get teams		
+		if( team == Team.A )
+		{
+			myTeam = teamA;
+		}
+		else
+		{
+			myTeam = teamB;
+		}
+
+		// for each row in rows
+		for(Player[] row : myTeam)
+		{
+			// for each player in row
+			for( Player p : row )
+			{
+				// if two id match then this player should be in this team
+				if( p.getID() == player.getID() )
+				{
+					return true;
+				}
+			}
+		}
+
+		// not match any player id, then return false
 		return false;
 	}
 	
