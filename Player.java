@@ -172,18 +172,6 @@ public class Player{
 	{
 		return this.team;
 	}
-
-	// compare two player by hp if hp is the same compare by position
-	public int compareTo(Player a, Player b)
-	{
-		int result;
-		result = a.getCurrentHP() - b.getCurrentHP();
-		if( result == 0 )
-		{
-			result = a.getPostion() - b.getPostion();
-		}
-		return result;
-	}
 	
 	/*
 		deduce target hp with attack of player
@@ -255,22 +243,29 @@ public class Player{
 	 */
 	public void takeAction(Arena arena)
 	{	
+		Team myTeam;
+		Team theirTeam;
+		if( isMemberOf(this, Team.A) )
+		{
+			myTeam = Team.A;
+			theirTeam = Team.B;
+		}
+		else
+		{
+			myTeam = Team.B;
+			theirTeam = Team.A;
+		}
+
 		if( this.getCounter() == this.numSpecialTurns )
 		{
-			Team myTeam;
-			Team theirTeam;
-			if( isMemberOf(this, Team.A) )
-			{
-				myTeam = Team.A;
-				theirTeam = Team.B;
-			}
-			else
-			{
-				myTeam = Team.B;
-				theirTeam = Team.A;
-			}
 			// call special ability of sub class
 			useSpecialAbility(arena.getTeam(myTeam), arena.getTeam(theirTeam));
+		}
+		else
+		{
+			// attack lowest of their team
+			Player lowestTheirTeam = getLowestHP(theirTeam);
+			attack(lowestTheirTeam);
 		}
 	}
 
@@ -287,14 +282,19 @@ public class Player{
 			}
 		}
 		
-		// and sort by hp and index
-		// buble sort
+		// and buble sort by hp and index
 		int n = plist.size();
 		for(int i=0; i < n; i++)
 		{  
 			for(int j=1; j < (n-i); j++)
 			{
-				if(arr[j-1] > arr[j]){  
+				Player a = plist.get(j-1);
+				Player b = plist.get(j);
+				// compare two player with current hp
+				double result = a.getCurrentHP() - b.getCurrentHP();
+				// if hp equal then use position instead
+				result = result == 0 ? a.getPostion() - b.getPostion() : result;
+				if( result > 0 ){
 					//swap elements
 					Player temp = plist.get(j-1);
 					plist.set(j-1, plist.get(j));

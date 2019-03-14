@@ -26,9 +26,7 @@ public class Arena {
 	 */
 	public Arena(int _numRowPlayers)
 	{	
-		//INSERT YOUR CODE HERE
-		
-		
+		this.numRowPlayers = _numRowPlayers;
 		
 		////Keep this block of code. You need it for initialize the log file. 
 		////(You will learn how to deal with files later)
@@ -92,7 +90,11 @@ public class Arena {
 	 */
 	public void addPlayer(Team team, Player.PlayerType pType, Row row, int position)
 	{	
-		//INSERT YOUR CODE HERE
+		Player player = new Player(pType);
+		Player[][] myTeam = team == Team.A ? teamA : teamB;
+		int row_index = row == Row.front ? 0 : 1;
+	
+		myTeam[row_index][position - 1] = player;
 	}
 	
 	
@@ -108,8 +110,49 @@ public class Arena {
 	 */
 	public boolean validatePlayers()
 	{
-		//INSERT YOUR CODE HERE
+		return validatePlayers(teamA) && validatePlayers(teamB);
+	}
+	// override method
+	private boolean validatePlayers(Player[][] team)
+	{
+		enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
+		HashMap<PlayerType, int> typeCounter = new HashMap<PlayerType, int>();
 		
+		for( int row=0, row < 2, row++ )
+		{
+			for( int position=0, position < numRowPlayers, position++ )
+			{
+				Player player = team[row][position];
+				// fail validate if one player is null
+				if( player == null )
+				{
+					return false;
+				}
+				// add counter to check MAXEACHTYPE
+				PlayerType pType = player.getType();
+				int counter = typeCounter.get(pType);
+				if( counter )
+				{
+					typeCounter.replace(pType,counter++);
+				}
+				else
+				{
+					typeCounter.put(pType, 1);
+				}
+			}
+		}
+
+		// check MAXEACHTYPE
+		for( Map.Entry tc : typeCounter.entrySet() )
+		{
+			if( tc.getValue() > MAXEACHTYPE )
+			{
+				// fail validate
+				return false;
+			}
+		}
+
+		// here we pass all validate
 		return true;
 	}
 	
@@ -121,9 +164,12 @@ public class Arena {
 	 */
 	public static double getSumHP(Player[][] team)
 	{
-		//INSERT YOUR CODE HERE
-		
-		return 0;
+		double sum = 0;
+		for( Player player : team )
+		{
+			sum += player.getCurrentHP();
+		}
+		return sum;
 	}
 	
 	/**
@@ -137,9 +183,39 @@ public class Arena {
 	 */
 	public Player[][] getWinningTeam()
 	{
-		//INSERT YOUR CODE HERE	
-		
-		return null;
+		int aliveA = getNumberAlive(teamA);
+		int aliveB = getNumberAlive(teamB);
+		double sumA = getSumHP(teamA);
+		double sumB = getSumHP(teamB);
+
+		// case one win if number of alive players is higher than the other team
+		if( aliveA != aliveB )
+		{
+			return aliveA > aliveB ? teamA : teamB;
+		}
+		// case two win if number of alive players is higher than the other team
+		else if( sumA != sumB )
+		{
+			return sumA > sumB ? teamA : teamB;
+		}
+		// last case, number of alive are equels and sum of hp are equeals then return teamA
+		else
+		{
+			return teamA;
+		}
+	}
+	// Return number of alive players in team
+	private int getNumberAlive(Player[][] team)
+	{
+		int alive = 0;
+		for( Player player : team )
+		{
+			if( player.isAlive() )
+			{
+				alive++;
+			}
+		}
+		return alive;
 	}
 	
 	/**
@@ -218,13 +294,9 @@ public class Arena {
 		{
 			return this.teamA;
 		}
-		else if( team == Team.B )
-		{
-			return this.teamB;
-		}
 		else
 		{
-			System.out.println("team can be 'A' or 'B'");
+			return this.teamB;
 		}
 	}
 }
