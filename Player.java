@@ -16,6 +16,8 @@ public class Player{
 	private int position;       //Position in team
 	private int counter;        //Counter for useSpecialAbility
 	private int id;             //Identifier of this play
+	private int curseCounter;   //Counter for curse
+	private int fcCounter;      //Counter for Fortune-Cookies
 
 	private static int auto_increment = 0; // auto increment for id
 
@@ -199,7 +201,7 @@ public class Player{
 		}
 	}
 	
-	public void heal(Player[][] myTeam)
+	private void heal(Player[][] myTeam)
 	{
 		Player min = getLowestHP(myTeam);
 		min.setCurrentHP( min.getCurrentHP() + ( this.getMaxHP() * 0.25 ) );
@@ -209,17 +211,43 @@ public class Player{
 		}
 	}
 
-	public void taunt(Player[][] theirTeam)
+	private void taunt(Player[][] theirTeam)
+	{
+		Player player = getFirstPosition(theirTeam);
+		
+		if( player.getCounter() == player.numSpecialTurns )
+		{
+			if ( player.getType() == PlayerType.Samurai )
+			{
+				player.doubleSlash(player);
+			}
+			else if ( player.getType() == PlayerType.BlackMage )
+			{
+				player.curse(player);
+			}
+		}
+		else
+		{
+			player.attack(player);
+		}
+	}
+
+	private void doubleSlash(Player[][] theirTeam)
+	{
+		Player target = getLowestHP(theirTeam);
+		this.doubleSlash(target);
+	}
+	private void doubleSlash(Player player)
+	{
+		this.attack(player);
+		this.attack(player);
+	}
+
+	private void curse(Player[][] theirTeam)
 	{
 
 	}
-
-	public void doubleSlash(Player[][] theirTeam)
-	{
-
-	}
-
-	public void curse(Player[][] theirTeam)
+	private void curse(Player player)
 	{
 
 	}
@@ -260,13 +288,48 @@ public class Player{
 		{
 			// call special ability of sub class
 			useSpecialAbility(arena.getTeam(myTeam), arena.getTeam(theirTeam));
+			this.resetCounter();
 		}
 		else
 		{
 			// attack lowest of their team
 			Player lowestTheirTeam = getLowestHP(theirTeam);
 			attack(lowestTheirTeam);
+			this.increaseCounter();
 		}
+	}
+
+	// return first position of team
+	public Player getFirstPosition(Player[][] team)
+	{
+		// pull all player to arraylist
+		ArrayList<Player> plist = new ArrayList<Player>();
+		for(Player[] players : myTeam)
+		{
+			for( Player player : players )
+			{
+				plist.add(player);
+			}
+		}
+		
+		// and bubble sort by position
+		int n = plist.size();
+		for(int i=0; i < n; i++)
+		{  
+			for(int j=1; j < (n-i); j++)
+			{
+				Player a = plist.get(j-1);
+				Player b = plist.get(j);
+				
+				if( a.getPostion() - b.getPostion() ){
+					//swap elements
+					plist.set(j-1, b);
+					plist.set(j, a);
+				}	
+			}
+        }
+		
+		return plist.get(0);
 	}
 
 	// return lowest current hp in this team
