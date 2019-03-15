@@ -3,7 +3,6 @@ import java.util.*;
 public class Player{
 
 	private enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
-	private enum PlayerStatus {Sleeping, Taunting, Cursed};
 	private enum Team {A, B};   //enum for specifying team A or B
 
 	private PlayerStatus status;//Status of this player. Can be one of either Sleeping, Taunting, Cursed or NULL ( for normal case )
@@ -16,8 +15,9 @@ public class Player{
 	private int position;       //Position in team
 	private int counter;        //Counter for useSpecialAbility
 	private int id;             //Identifier of this play
+	private int tauntCounter;   //Counter for tuant
 	private int curseCounter;   //Counter for curse
-	private int fcCounter;      //Counter for Fortune-Cookies
+	private int sleepCounter;   //Counter for sleep (Fortune-Cookie)
 
 	private static int auto_increment = 0; // auto increment for id
 
@@ -30,25 +30,24 @@ public class Player{
 	{
 		switch(_type)
 		{
-			case PlayerType.Healer: 	this(_type, 4790, 238, 4);
-			case PlayerType.Tank: 		this(_type, 5340, 255, 4);
-			case PlayerType.Samurai: 	this(_type, 4005, 368, 3);
-			case PlayerType.BlackMage: 	this(_type, 4175, 303, 4);
-			case PlayerType.Phoenix: 	this(_type, 4175, 209, 8);
-			case PlayerType.Cherry: 	this(_type, 3560, 198, 4);
+			case Healer: 	init(_type, 4790, 238, 4);
+			case Tank: 		init(_type, 5340, 255, 4);
+			case Samurai: 	init(_type, 4005, 368, 3);
+			case BlackMage: 	init(_type, 4175, 303, 4);
+			case Phoenix: 	init(_type, 4175, 209, 8);
+			case Cherry: 	init(_type, 3560, 198, 4);
 		}
 	}
 
 	/**
-	 * Constructor of class Player, which initializes this player's type, maxHP, atk, numSpecialTurns, 
-	 * as specified in the given table. It also reset the internal turn count of this player. 
+	 * initialized Player
 	 * @param _type
 	 * @param _team
 	 * @param _maxHP
 	 * @param _atk
 	 * @param _numSpecialTurns
 	 */
-	public Player(PlayerType _type, double _maxHP, double _atk, int _numSpecialTurns)
+	private void init(PlayerType _type, double _maxHP, double _atk, int _numSpecialTurns)
 	{
 		this.type = _type;
 		this.maxHP = _maxHP;
@@ -91,7 +90,7 @@ public class Player{
 	 */
 	public boolean isSleeping()
 	{
-		return this.status == PlayerStatus.Sleeping;
+		return this.sleepCounter > 0 ? true : false;
 	}
 	
 	/**
@@ -100,7 +99,7 @@ public class Player{
 	 */
 	public boolean isCursed()
 	{
-		return this.status == PlayerStatus.Cursed;
+		return this.curseCounter > 0 ? true : false;
 	}
 	
 	/**
@@ -118,7 +117,7 @@ public class Player{
 	 */
 	public boolean isTaunting()
 	{
-		return this.status == PlayerStatus.Taunting;
+		return this.tauntCounter > 0 ? true : false;
 	}
 
 	// set currentHp of this Player
@@ -192,22 +191,27 @@ public class Player{
 	{	
 		switch(this.type)
 		{
-			case PlayerType.Healer: heal(myTeam);
-			case PlayerType.Tank: taunt(theirTeam);
-			case PlayerType.Samurai: doubleSlash(theirTeam);
-			case PlayerType.BlackMage: curse(theirTeam);
-			case PlayerType.Phoenix: revive(myTeam);
-			case PlayerType.Cherry: fortuneCookies(theirTeam);
+			case Healer: 	heal(myTeam);
+			case Tank: 		taunt(theirTeam);
+			case Samurai: 	doubleSlash(theirTeam);
+			case BlackMage:	curse(theirTeam);
+			case Phoenix: 	revive(myTeam);
+			case Cherry: 	fortuneCookies(theirTeam);
 		}
 	}
 	
 	private void heal(Player[][] myTeam)
 	{
+		if( this.isCursed() )
+		{
+			return;
+		}
+
 		Player min = getLowestHP(myTeam);
 		min.setCurrentHP( min.getCurrentHP() + ( this.getMaxHP() * 0.25 ) );
 		if( min.getCurrentHP() > this.getMaxHP() )
 		{
-			min.getCurrentHP( this.getMaxHP() );
+			min.setCurrentHP( this.getMaxHP() );
 		}
 	}
 
@@ -271,23 +275,26 @@ public class Player{
 	 */
 	public void takeAction(Arena arena)
 	{	
-		Team myTeam;
-		Team theirTeam;
-		if( isMemberOf(this, Team.A) )
+		Player[][] myTeam;
+		Player[][] theirTeam;
+
+		// find my team and their team
+		if( isMemberOf(this, A) )
 		{
-			myTeam = Team.A;
-			theirTeam = Team.B;
+			myTeam = arena.getTeam(A);
+			theirTeam = arena.getTeam(B);
 		}
 		else
 		{
-			myTeam = Team.B;
-			theirTeam = Team.A;
+			myTeam = arena.getTeam(B);
+			theirTeam = arena.getTeam(A);
 		}
 
+		// use special or attack?
 		if( this.getCounter() == this.numSpecialTurns )
 		{
 			// call special ability of sub class
-			useSpecialAbility(arena.getTeam(myTeam), arena.getTeam(theirTeam));
+			useSpecialAbility(myTeam, theirTeam);
 			this.resetCounter();
 		}
 		else
@@ -296,6 +303,20 @@ public class Player{
 			Player lowestTheirTeam = getLowestHP(theirTeam);
 			attack(lowestTheirTeam);
 			this.increaseCounter();
+		}
+
+		// if this player has status tuant, sleep, or curse reduce counter
+		if( this.tauntCounter > 0 )
+		{
+			this.tauntCounter--;
+		}
+		if( this.sleepCounter > 0 )
+		{
+			this.sleepCounter--;
+		}
+		if( this.curseCounter > 0 )
+		{
+			this.sleepCounter--;
 		}
 	}
 

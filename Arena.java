@@ -288,9 +288,10 @@ public class Arena {
 		
 	}
 	
+	// return players of Team A or B
 	public Player[][] getTeam(Team team)
 	{
-		if( team == Team.A )
+		if( team == A )
 		{
 			return this.teamA;
 		}
