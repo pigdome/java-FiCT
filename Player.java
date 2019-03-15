@@ -218,21 +218,24 @@ public class Player{
 	private void taunt(Player[][] theirTeam)
 	{
 		Player player = getFirstPosition(theirTeam);
-		
-		if( player.getCounter() == player.numSpecialTurns )
+		player.tauntCounter++;
+	}
+	private void taunt()
+	{
+		if( this.getCounter() == this.numSpecialTurns )
 		{
-			if ( player.getType() == PlayerType.Samurai )
+			if ( this.getType() == PlayerType.Samurai )
 			{
-				player.doubleSlash(player);
+				this.doubleSlash(player);
 			}
-			else if ( player.getType() == PlayerType.BlackMage )
+			else if ( this.getType() == PlayerType.BlackMage )
 			{
-				player.curse(player);
+				this.curse(player);
 			}
 		}
 		else
 		{
-			player.attack(player);
+			this.attack(this);
 		}
 	}
 
@@ -249,21 +252,50 @@ public class Player{
 
 	private void curse(Player[][] theirTeam)
 	{
-
+		Player target = getLowestHP(theirTeam);
+		curse(target);
 	}
 	private void curse(Player player)
 	{
-
+		// mak sure curse counter always reset
+		player.curseCounter = 1;
 	}
 
-	public void revive(Player[][] myTeam)
+	private void revive(Player[][] myTeam)
 	{
-
+		Player player = getDeadPlayer(myTeam);
+		if( player )
+		{
+			player.currentHP = maxHP * 0.3;
+			this.resetCounter();
+			this.curseCounter = 0;
+			this.sleepCounter = 0;
+			this.tauntCounter = 0;
+		}
+	}
+	private Player getDeadPlayer(Player[][] team)
+	{
+		for( Player[] row : theirTeam )
+		{
+			for( Player player : row )
+			{
+				if( ! player.isAlive() )
+				{
+					return player;
+				}
+			}
+		}
 	}
 
-	public void fortuneCookies(Player[][] theirTeam)
+	private void fortuneCookies(Player[][] theirTeam)
 	{
-
+		for( Player[] row : theirTeam )
+		{
+			for( Player player : row )
+			{
+				player.sleepCounter = 1;
+			}
+		}
 	}
 	
 	/**
@@ -290,33 +322,38 @@ public class Player{
 			theirTeam = arena.getTeam(A);
 		}
 
-		// use special or attack?
-		if( this.getCounter() == this.numSpecialTurns )
+		// if curse reduce curse counter
+		if( this.isCursed() )
+		{
+			this.curseCounter--;
+		}
+
+		// if tuanting attack or use special to him self
+		if( this.isTaunting() )
+		{
+			this.tuant();
+			this.tauntCounter--;
+		}
+		// if sleep do nothing for this turn
+		else if( this.isSleeping() )
+		{
+			this.sleepCounter--;
+			return;
+		}
+		// can use special?
+		else if( this.getCounter() == this.numSpecialTurns )
 		{
 			// call special ability of sub class
 			useSpecialAbility(myTeam, theirTeam);
 			this.resetCounter();
 		}
+		// normal attack
 		else
 		{
 			// attack lowest of their team
 			Player lowestTheirTeam = getLowestHP(theirTeam);
 			attack(lowestTheirTeam);
 			this.increaseCounter();
-		}
-
-		// if this player has status tuant, sleep, or curse reduce counter
-		if( this.tauntCounter > 0 )
-		{
-			this.tauntCounter--;
-		}
-		if( this.sleepCounter > 0 )
-		{
-			this.sleepCounter--;
-		}
-		if( this.curseCounter > 0 )
-		{
-			this.sleepCounter--;
 		}
 	}
 
@@ -402,6 +439,4 @@ public class Player{
 				+((this.isSleeping())?"S":"")
 				+"]";
 	}
-	
-	
 }
