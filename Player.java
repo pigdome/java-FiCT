@@ -2,12 +2,8 @@ import java.util.*;
 
 public class Player{
 
-	private enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
-	private enum Team {A, B};   //enum for specifying team A or B
-
-	private PlayerStatus status;//Status of this player. Can be one of either Sleeping, Taunting, Cursed or NULL ( for normal case )
+	public enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
 	private PlayerType type; 	//Type of this player. Can be one of either Healer, Tank, Samurai, BlackMage, or Phoenix
-	private Team team;
 	private double maxHP;		//Max HP of this player
 	private double currentHP;	//Current HP of this player 
 	private double atk;			//Attack power of this player
@@ -51,10 +47,11 @@ public class Player{
 	{
 		this.type = _type;
 		this.maxHP = _maxHP;
+		this.currentHP = this.maxHP;
 		this.atk = _atk;
 		this.numSpecialTurns = _numSpecialTurns;
 		this.id = ++auto_increment;
-		ResetCounter();
+		resetCounter();
 	}
 	
 	/**
@@ -161,18 +158,6 @@ public class Player{
 	{
 		return this.id;
 	}
-
-	// set team
-	public void setTeam(Team team)
-	{
-		this.team = team;
-	}
-
-	// get team
-	public Team getTeam()
-	{
-		return this.team;
-	}
 	
 	/*
 		deduce target hp with attack of player
@@ -226,11 +211,11 @@ public class Player{
 		{
 			if ( this.getType() == PlayerType.Samurai )
 			{
-				this.doubleSlash(player);
+				this.doubleSlash(this);
 			}
 			else if ( this.getType() == PlayerType.BlackMage )
 			{
-				this.curse(player);
+				this.curse(this);
 			}
 		}
 		else
@@ -264,7 +249,7 @@ public class Player{
 	private void revive(Player[][] myTeam)
 	{
 		Player player = getDeadPlayer(myTeam);
-		if( player )
+		if( player != null )
 		{
 			player.currentHP = maxHP * 0.3;
 			this.resetCounter();
@@ -275,7 +260,7 @@ public class Player{
 	}
 	private Player getDeadPlayer(Player[][] team)
 	{
-		for( Player[] row : theirTeam )
+		for( Player[] row : team )
 		{
 			for( Player player : row )
 			{
@@ -285,6 +270,7 @@ public class Player{
 				}
 			}
 		}
+		return null;
 	}
 
 	private void fortuneCookies(Player[][] theirTeam)
@@ -311,15 +297,15 @@ public class Player{
 		Player[][] theirTeam;
 
 		// find my team and their team
-		if( isMemberOf(this, A) )
+		if( arena.isMemberOf(this, Arena.Team.A) )
 		{
-			myTeam = arena.getTeam(A);
-			theirTeam = arena.getTeam(B);
+			myTeam = arena.getTeam(Arena.Team.A);
+			theirTeam = arena.getTeam(Arena.Team.B);
 		}
 		else
 		{
-			myTeam = arena.getTeam(B);
-			theirTeam = arena.getTeam(A);
+			myTeam = arena.getTeam(Arena.Team.B);
+			theirTeam = arena.getTeam(Arena.Team.A);
 		}
 
 		// if curse reduce curse counter
@@ -331,7 +317,7 @@ public class Player{
 		// if tuanting attack or use special to him self
 		if( this.isTaunting() )
 		{
-			this.tuant();
+			this.taunt();
 			this.tauntCounter--;
 		}
 		// if sleep do nothing for this turn
@@ -362,7 +348,7 @@ public class Player{
 	{
 		// pull all player to arraylist
 		ArrayList<Player> plist = new ArrayList<Player>();
-		for(Player[] players : myTeam)
+		for(Player[] players : team)
 		{
 			for( Player player : players )
 			{
@@ -379,7 +365,7 @@ public class Player{
 				Player a = plist.get(j-1);
 				Player b = plist.get(j);
 				
-				if( a.getPostion() - b.getPostion() ){
+				if( a.getPostion() - b.getPostion() > 0 ){
 					//swap elements
 					plist.set(j-1, b);
 					plist.set(j, a);
@@ -395,7 +381,7 @@ public class Player{
 	{
 		// pull all player to arraylist
 		ArrayList<Player> plist = new ArrayList<Player>();
-		for(Player[] players : myTeam)
+		for(Player[] players : team)
 		{
 			for( Player player : players )
 			{

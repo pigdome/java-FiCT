@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.*;	
 
 public class Arena {
 
@@ -14,7 +15,8 @@ public class Arena {
 	private Player[][] teamB = null;	//two dimensional array representing the players of Team B
 	private int numRowPlayers = 0;		//number of players in each row
 	
-	public static final int MAXROUNDS = 100;	//Max number of turn
+	//public static final int MAXROUNDS = 100;	//Max number of turn
+	public static final int MAXROUNDS = 3;	//Max number of turn
 	public static final int MAXEACHTYPE = 3;	//Max number of players of each type, in each team.
 	private final Path logFile = Paths.get("battle_log.txt");
 	
@@ -27,7 +29,9 @@ public class Arena {
 	public Arena(int _numRowPlayers)
 	{	
 		this.numRowPlayers = _numRowPlayers;
-		
+		teamA = new Player[2][this.numRowPlayers];
+		teamB = new Player[2][this.numRowPlayers];
+
 		////Keep this block of code. You need it for initialize the log file. 
 		////(You will learn how to deal with files later)
 		try {
@@ -92,7 +96,7 @@ public class Arena {
 	{	
 		Player player = new Player(pType);
 		Player[][] myTeam = team == Team.A ? teamA : teamB;
-		int row_index = row == Row.front ? 0 : 1;
+		int row_index = row == 	Row.Front ? 0 : 1;
 	
 		myTeam[row_index][position - 1] = player;
 	}
@@ -115,12 +119,11 @@ public class Arena {
 	// override method
 	private boolean validatePlayers(Player[][] team)
 	{
-		enum PlayerType {Healer, Tank, Samurai, BlackMage, Phoenix, Cherry};
-		HashMap<PlayerType, int> typeCounter = new HashMap<PlayerType, int>();
+		HashMap<Player.PlayerType, Integer> typeCounter = new HashMap<Player.PlayerType, Integer>();
 		
-		for( int row=0, row < 2, row++ )
+		for( int row=0; row < 2; row++ )
 		{
-			for( int position=0, position < numRowPlayers, position++ )
+			for( int position=0; position < numRowPlayers; position++ )
 			{
 				Player player = team[row][position];
 				// fail validate if one player is null
@@ -129,9 +132,9 @@ public class Arena {
 					return false;
 				}
 				// add counter to check MAXEACHTYPE
-				PlayerType pType = player.getType();
-				int counter = typeCounter.get(pType);
-				if( counter )
+				Player.PlayerType pType = player.getType();
+				Integer counter = typeCounter.get(pType);
+				if( counter != null )
 				{
 					typeCounter.replace(pType,counter++);
 				}
@@ -145,7 +148,7 @@ public class Arena {
 		// check MAXEACHTYPE
 		for( Map.Entry tc : typeCounter.entrySet() )
 		{
-			if( tc.getValue() > MAXEACHTYPE )
+			if( (int)tc.getValue() > MAXEACHTYPE )
 			{
 				// fail validate
 				return false;
@@ -165,9 +168,12 @@ public class Arena {
 	public static double getSumHP(Player[][] team)
 	{
 		double sum = 0;
-		for( Player player : team )
+		for( Player[] row : team )
 		{
-			sum += player.getCurrentHP();
+			for( Player player : row )
+			{
+				sum += player.getCurrentHP();
+			}
 		}
 		return sum;
 	}
@@ -208,11 +214,14 @@ public class Arena {
 	private int getNumberAlive(Player[][] team)
 	{
 		int alive = 0;
-		for( Player player : team )
+		for( Player[] row : team )
 		{
-			if( player.isAlive() )
+			for( Player player : row )
 			{
-				alive++;
+				if( player.isAlive() )
+				{
+					alive++;
+				}
 			}
 		}
 		return alive;
@@ -233,7 +242,34 @@ public class Arena {
 	 */
 	public void startBattle()
 	{
-		//INSERT YOUR CODE HERE
+		int round = 1;
+
+		while( round < MAXROUNDS && getNumberAlive(teamA) > 0 && getNumberAlive(teamB) > 0 )
+		{
+			System.out.println("@ Round "+round);
+			for( Player [] row : teamA )
+			{
+				for( Player player : row )
+				{
+					player.takeAction(this);
+				}
+			}
+
+			for( Player [] row : teamB )
+			{
+				for( Player player : row )
+				{
+					player.takeAction(this);
+				}
+			}
+
+			round++;
+			displayArea(this, true);
+			logAfterEachRound();
+		}
+
+		Player[][] winning = getWinningTeam();
+		System.out.println("@@@ Team "+( winning == teamA ? "A" : "B" )+" won.");
 	}
 	
 	
@@ -291,7 +327,7 @@ public class Arena {
 	// return players of Team A or B
 	public Player[][] getTeam(Team team)
 	{
-		if( team == A )
+		if( team == Team.A )
 		{
 			return this.teamA;
 		}
