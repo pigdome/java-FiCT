@@ -16,7 +16,7 @@ public class Arena {
 	private int numRowPlayers = 0;		//number of players in each row
 	
 	//public static final int MAXROUNDS = 100;	//Max number of turn
-	public static final int MAXROUNDS = 20;	//Max number of turn
+	public static final int MAXROUNDS = 100;	//Max number of turn
 	public static final int MAXEACHTYPE = 3;	//Max number of players of each type, in each team.
 	private final Path logFile = Paths.get("battle_log.txt");
 	
@@ -245,7 +245,8 @@ public class Arena {
 	{
 		int round = 1;
 
-		while( round < MAXROUNDS && getNumberAlive(teamA) > 0 && getNumberAlive(teamB) > 0 )
+		ENDGAME:
+		while( round <= MAXROUNDS )
 		{
 			System.out.println("@ Round "+round);
 			
@@ -258,6 +259,13 @@ public class Arena {
 				}
 			}
 
+			if( getNumberAlive(teamB) == 0 )
+			{
+				displayArea(this, true);
+				logAfterEachRound();
+				break ENDGAME;
+			}
+
 			System.out.println("Team B");
 			for( Player [] row : teamB )
 			{
@@ -265,6 +273,13 @@ public class Arena {
 				{
 					player.takeAction(this);
 				}
+			}
+
+			if( getNumberAlive(teamA) == 0 )
+			{
+				displayArea(this, true);
+				logAfterEachRound();
+				break ENDGAME;
 			}
 
 			round++;

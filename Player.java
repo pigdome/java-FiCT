@@ -166,6 +166,11 @@ public class Player{
 	*/
 	public void attack(Player target)
 	{	
+		if( target == null )
+		{
+			System.out.println("call method attack with null player");
+			return;
+		}
 		System.out.println("[" + this.position + "] {" + this.type + "} attack [" + target.position + "] {" + target.type + "}");
 		double targetHP = target.getCurrentHP();
 		targetHP = targetHP - this.atk;
@@ -178,7 +183,7 @@ public class Player{
 		switch(this.type)
 		{
 			case Healer: 	heal(myTeam); break;
-			case Tank: 		taunt(theirTeam); break;
+			case Tank: 		taunt(); break;
 			case Samurai: 	doubleSlash(theirTeam); break;
 			case BlackMage:	curse(theirTeam); break;
 			case Phoenix: 	revive(myTeam); break;
@@ -193,7 +198,7 @@ public class Player{
 			return;
 		}
 
-		Player min = getLowestHP(myTeam);
+		Player min = getLowestHP(myTeam, false);
 		min.setCurrentHP( min.getCurrentHP() + ( min.getMaxHP() * 0.25 ) );
 		if( min.getCurrentHP() > min.getMaxHP() )
 		{
@@ -201,33 +206,14 @@ public class Player{
 		}
 	}
 
-	private void taunt(Player[][] theirTeam)
-	{
-		//Player player = getFirstPosition(theirTeam);
-		this.tauntCounter++;
-	}
 	private void taunt()
 	{
-		if( this.getCounter() == this.numSpecialTurns )
-		{
-			if ( this.getType() == PlayerType.Samurai )
-			{
-				this.doubleSlash(this);
-			}
-			else if ( this.getType() == PlayerType.BlackMage )
-			{
-				this.curse(this);
-			}
-		}
-		else
-		{
-			this.attack(this);
-		}
+		this.tauntCounter++;
 	}
 
 	private void doubleSlash(Player[][] theirTeam)
 	{
-		Player target = getLowestHP(theirTeam);
+		Player target = getLowestHP(theirTeam, true);
 		this.doubleSlash(target);
 	}
 	private void doubleSlash(Player player)
@@ -238,13 +224,17 @@ public class Player{
 
 	private void curse(Player[][] theirTeam)
 	{
-		Player target = getLowestHP(theirTeam);
-		curse(target);
+		Player target = getLowestHP(theirTeam, false);
+		if( target != null )
+		{
+			curse(target);
+		}
 	}
 	private void curse(Player player)
 	{
 		// mak sure curse counter always reset
-		player.curseCounter = 1;
+		System.out.println( player.type + "@" + player.position + " is curse");
+		player.curseCounter = 2;
 	}
 
 	private void revive(Player[][] myTeam)
@@ -298,8 +288,33 @@ public class Player{
 		//System.out.println( this.type + "@" +this.position+" take action");
 		Player[][] myTeam;
 		Player[][] theirTeam;
+		
+		// if curse reduce curse counter
+		if( this.isCursed() )
+		{
+			this.curseCounter--;
+		}
 
-		this.increaseCounter();
+		// if taunting reduce taunt counter
+		if( this.isTaunting() )
+		{
+			this.tauntCounter--;
+		}
+
+		// if dead do nothing
+		if( ! this.isAlive() )
+		{
+			this.increaseCounter();
+			return;
+		}
+
+		// if sleep do nothing for this turn
+		if( this.isSleeping() )
+		{
+			this.sleepCounter--;
+			System.out.println( this.type + "@" +this.position+" sleep");
+			return;
+		}
 
 		// find my team and their team
 		if( arena.isMemberOf(this, Arena.Team.A) )
@@ -312,28 +327,11 @@ public class Player{
 			myTeam = arena.getTeam(Arena.Team.B);
 			theirTeam = arena.getTeam(Arena.Team.A);
 		}
-
-		// if dead do nothing
-		if( ! this.isAlive() )
-		{
-			return;
-		}
-		// if curse reduce curse counter
-		if( this.isCursed() )
-		{
-			this.curseCounter--;
-		}
-
 		
-		// if sleep do nothing for this turn
-		if( this.isSleeping() )
-		{
-			this.sleepCounter--;
-			System.out.println( this.type + "@" +this.position+" sleep");
-			return;
-		}
+		
 		// can use special?
-		else if( this.getCounter() == this.numSpecialTurns )
+		this.increaseCounter();
+		if( this.getCounter() == this.numSpecialTurns )
 		{
 			// call special ability of sub class
 			System.out.println( this.type + "@" +this.position+" use special");
@@ -344,7 +342,7 @@ public class Player{
 		else
 		{
 			// attack lowest of their team
-			Player lowestTheirTeam = getLowestHP(theirTeam);
+			Player lowestTheirTeam = getLowestHP(theirTeam, true);
 			attack(lowestTheirTeam);
 		}
 	}
@@ -383,9 +381,22 @@ public class Player{
 	}
 
 	// return lowest current hp in this team
-	public Player getLowestHP(Player[][] team)
+	public Player getLowestHP(Player[][] team, boolean forAttack)
 	{
-		Player lowest = getLowestHP(team[0]);
+		Player lowest;
+
+		// return taunting player first
+		if( forAttack )
+		{
+			lowest = getTaunting(team);
+			if( lowest != null )
+			{
+				return lowest;
+			}
+		}
+		
+		// here return some one
+		lowest = getLowestHP(team[0]);
 		if( lowest != null )
 		{
 			return lowest;
@@ -394,11 +405,49 @@ public class Player{
 		{
 			return getLowestHP(team[1]);
 		}
+
+		//return lowest;
+	}
+	private Player getTaunting(Player[][] team)
+	{
+		ArrayList<Player> plistTaunt = new ArrayList<Player>();
+		
+		for(Player[] row : team)
+		{
+			for(Player player : row)
+			{
+				if( player.isAlive() && player.isTaunting() )
+				{
+					plistTaunt.add(player);
+				}
+			}
+		}
+		
+		int n = plistTaunt.size();
+		// sort by position
+		for(int i=0; i < n; i++)
+		{  
+			for(int j=1; j < (n-i); j++)
+			{
+				Player a = plistTaunt.get(j-1);
+				Player b = plistTaunt.get(j);
+				
+				if( a.getPostion() - b.getPostion() > 0 ){
+					//swap elements
+					plistTaunt.set(j-1, b);
+					plistTaunt.set(j, a);
+				}	
+			}
+		}
+			
+		return plistTaunt.size() > 0 ? plistTaunt.get(0) : null;
 	}
 	private Player getLowestHP(Player[] team)
 	{
 		// pull all player to arraylist
 		ArrayList<Player> plist = new ArrayList<Player>();
+		
+
 		for(Player player : team)
 		{
 			if( player.isAlive() )
@@ -406,7 +455,7 @@ public class Player{
 				plist.add(player);
 			}
 		}
-		
+
 		// and buble sort by hp and index
 		int n = plist.size();
 		for(int i=0; i < n; i++)
@@ -421,9 +470,8 @@ public class Player{
 				result = result == 0 ? a.getPostion() - b.getPostion() : result;
 				if( result > 0 ){
 					//swap elements
-					Player temp = plist.get(j-1);
-					plist.set(j-1, plist.get(j));
-					plist.set(j, temp);
+					plist.set(j-1, b);
+					plist.set(j, a);
 				}	
 			}
         }
