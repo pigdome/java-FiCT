@@ -16,7 +16,7 @@ public class Arena {
 	private int numRowPlayers = 0;		//number of players in each row
 	
 	//public static final int MAXROUNDS = 100;	//Max number of turn
-	public static final int MAXROUNDS = 12;	//Max number of turn
+	public static final int MAXROUNDS = 100;	//Max number of turn
 	public static final int MAXEACHTYPE = 3;	//Max number of players of each type, in each team.
 	private final Path logFile = Paths.get("battle_log.txt");
 	

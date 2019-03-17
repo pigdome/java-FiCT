@@ -243,10 +243,10 @@ public class Player{
 		if( player != null )
 		{
 			player.currentHP = player.maxHP * 0.3;
-			this.resetCounter();
-			this.curseCounter = 0;
-			this.sleepCounter = 0;
-			this.tauntCounter = 0;
+			player.resetCounter();
+			player.curseCounter = 0;
+			player.sleepCounter = 0;
+			player.tauntCounter = 0;
 		}
 	}
 	private Player getDeadPlayer(Player[][] team)
@@ -311,7 +311,7 @@ public class Player{
 		// if sleep do nothing for this turn
 		if( this.isSleeping() )
 		{
-			this.sleepCounter--;
+			this.sleepCounter = 0;
 			System.out.println( this.type + "@" +this.position+" sleep");
 			return;
 		}
