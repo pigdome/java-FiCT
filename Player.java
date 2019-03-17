@@ -26,12 +26,12 @@ public class Player{
 	{
 		switch(_type)
 		{
-			case Healer: 	init(_type, 4790, 238, 4);
-			case Tank: 		init(_type, 5340, 255, 4);
-			case Samurai: 	init(_type, 4005, 368, 3);
-			case BlackMage: 	init(_type, 4175, 303, 4);
-			case Phoenix: 	init(_type, 4175, 209, 8);
-			case Cherry: 	init(_type, 3560, 198, 4);
+			case Healer: 	init(_type, 4790, 238, 4); break;
+			case Tank: 		init(_type, 5340, 255, 4); break;
+			case Samurai: 	init(_type, 4005, 368, 3); break;
+			case BlackMage: init(_type, 4175, 303, 4); break;
+			case Phoenix: 	init(_type, 4175, 209, 8); break;
+			case Cherry: 	init(_type, 3560, 198, 4); break;
 		}
 	}
 
@@ -166,6 +166,7 @@ public class Player{
 	*/
 	public void attack(Player target)
 	{	
+		System.out.println("[" + this.position + "] {" + this.type + "} attack [" + target.position + "] {" + target.type + "}");
 		double targetHP = target.getCurrentHP();
 		targetHP = targetHP - this.atk;
 		targetHP = targetHP < 0 ? 0 : targetHP;
@@ -176,12 +177,12 @@ public class Player{
 	{	
 		switch(this.type)
 		{
-			case Healer: 	heal(myTeam);
-			case Tank: 		taunt(theirTeam);
-			case Samurai: 	doubleSlash(theirTeam);
-			case BlackMage:	curse(theirTeam);
-			case Phoenix: 	revive(myTeam);
-			case Cherry: 	fortuneCookies(theirTeam);
+			case Healer: 	heal(myTeam); break;
+			case Tank: 		taunt(theirTeam); break;
+			case Samurai: 	doubleSlash(theirTeam); break;
+			case BlackMage:	curse(theirTeam); break;
+			case Phoenix: 	revive(myTeam); break;
+			case Cherry: 	fortuneCookies(theirTeam); break;
 		}
 	}
 	
@@ -193,17 +194,17 @@ public class Player{
 		}
 
 		Player min = getLowestHP(myTeam);
-		min.setCurrentHP( min.getCurrentHP() + ( this.getMaxHP() * 0.25 ) );
-		if( min.getCurrentHP() > this.getMaxHP() )
+		min.setCurrentHP( min.getCurrentHP() + ( min.getMaxHP() * 0.25 ) );
+		if( min.getCurrentHP() > min.getMaxHP() )
 		{
-			min.setCurrentHP( this.getMaxHP() );
+			min.setCurrentHP( min.getMaxHP() );
 		}
 	}
 
 	private void taunt(Player[][] theirTeam)
 	{
-		Player player = getFirstPosition(theirTeam);
-		player.tauntCounter++;
+		//Player player = getFirstPosition(theirTeam);
+		this.tauntCounter++;
 	}
 	private void taunt()
 	{
@@ -251,7 +252,7 @@ public class Player{
 		Player player = getDeadPlayer(myTeam);
 		if( player != null )
 		{
-			player.currentHP = maxHP * 0.3;
+			player.currentHP = player.maxHP * 0.3;
 			this.resetCounter();
 			this.curseCounter = 0;
 			this.sleepCounter = 0;
@@ -279,6 +280,7 @@ public class Player{
 		{
 			for( Player player : row )
 			{
+				System.out.println( player.type + "@" +player.position+" eat fortune cookies by" + this.type+"@"+this.position);
 				player.sleepCounter = 1;
 			}
 		}
@@ -293,8 +295,11 @@ public class Player{
 	 */
 	public void takeAction(Arena arena)
 	{	
+		//System.out.println( this.type + "@" +this.position+" take action");
 		Player[][] myTeam;
 		Player[][] theirTeam;
+
+		this.increaseCounter();
 
 		// find my team and their team
 		if( arena.isMemberOf(this, Arena.Team.A) )
@@ -308,28 +313,30 @@ public class Player{
 			theirTeam = arena.getTeam(Arena.Team.A);
 		}
 
+		// if dead do nothing
+		if( ! this.isAlive() )
+		{
+			return;
+		}
 		// if curse reduce curse counter
 		if( this.isCursed() )
 		{
 			this.curseCounter--;
 		}
 
-		// if tuanting attack or use special to him self
-		if( this.isTaunting() )
-		{
-			this.taunt();
-			this.tauntCounter--;
-		}
+		
 		// if sleep do nothing for this turn
-		else if( this.isSleeping() )
+		if( this.isSleeping() )
 		{
 			this.sleepCounter--;
+			System.out.println( this.type + "@" +this.position+" sleep");
 			return;
 		}
 		// can use special?
 		else if( this.getCounter() == this.numSpecialTurns )
 		{
 			// call special ability of sub class
+			System.out.println( this.type + "@" +this.position+" use special");
 			useSpecialAbility(myTeam, theirTeam);
 			this.resetCounter();
 		}
@@ -339,7 +346,6 @@ public class Player{
 			// attack lowest of their team
 			Player lowestTheirTeam = getLowestHP(theirTeam);
 			attack(lowestTheirTeam);
-			this.increaseCounter();
 		}
 	}
 
@@ -379,11 +385,23 @@ public class Player{
 	// return lowest current hp in this team
 	public Player getLowestHP(Player[][] team)
 	{
+		Player lowest = getLowestHP(team[0]);
+		if( lowest != null )
+		{
+			return lowest;
+		}
+		else
+		{
+			return getLowestHP(team[1]);
+		}
+	}
+	private Player getLowestHP(Player[] team)
+	{
 		// pull all player to arraylist
 		ArrayList<Player> plist = new ArrayList<Player>();
-		for(Player[] players : team)
+		for(Player player : team)
 		{
-			for( Player player : players )
+			if( player.isAlive() )
 			{
 				plist.add(player);
 			}
@@ -409,8 +427,8 @@ public class Player{
 				}	
 			}
         }
-		
-		return plist.get(0);
+		//System.out.println("lowest hp is " + this.type + ", "+ this.position);
+		return plist.size() > 0 ? plist.get(0) : null;
 	}
 	
 	/**

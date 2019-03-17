@@ -16,7 +16,7 @@ public class Arena {
 	private int numRowPlayers = 0;		//number of players in each row
 	
 	//public static final int MAXROUNDS = 100;	//Max number of turn
-	public static final int MAXROUNDS = 3;	//Max number of turn
+	public static final int MAXROUNDS = 20;	//Max number of turn
 	public static final int MAXEACHTYPE = 3;	//Max number of players of each type, in each team.
 	private final Path logFile = Paths.get("battle_log.txt");
 	
@@ -97,7 +97,8 @@ public class Arena {
 		Player player = new Player(pType);
 		Player[][] myTeam = team == Team.A ? teamA : teamB;
 		int row_index = row == 	Row.Front ? 0 : 1;
-	
+
+		player.setPosition( position + (row == Row.Front ? 0 : numRowPlayers) );
 		myTeam[row_index][position - 1] = player;
 	}
 	
@@ -247,6 +248,8 @@ public class Arena {
 		while( round < MAXROUNDS && getNumberAlive(teamA) > 0 && getNumberAlive(teamB) > 0 )
 		{
 			System.out.println("@ Round "+round);
+			
+			System.out.println("Team A");
 			for( Player [] row : teamA )
 			{
 				for( Player player : row )
@@ -255,6 +258,7 @@ public class Arena {
 				}
 			}
 
+			System.out.println("Team B");
 			for( Player [] row : teamB )
 			{
 				for( Player player : row )
